@@ -2283,7 +2283,7 @@ export default function App() {
                         <a href="#" className="hover:text-green-400 transition-colors">DAO</a>
                     </div>
                     <p className="text-gray-600 text-xs">
-                        © 2025 XMeta XGalaxies DAO. Built on the XRP Ledger.
+                        © 2025 XMeta XGalaxies DAO. Built on the XRP Ledger. <span className="text-cyan-900 ml-2">v1.1.0 (CORS Fix)</span>
                     </p>
                 </div>
             </footer>
