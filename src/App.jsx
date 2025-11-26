@@ -745,14 +745,14 @@ const GameDashboard = ({ address }) => {
                 ]
             };
 
-            console.log("Creating payload via fetch...", payload);
+            console.log("Creating payload via Netlify Function...", payload);
 
-            const response = await fetch('https://xumm.app/api/v1/platform/payload', {
+            const endpoint = '/.netlify/functions/create-payload';
+
+            const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-API-Key': import.meta.env.VITE_XAMAN_API_KEY,
-                    'Accept': 'application/json'
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(payload)
             });
@@ -1913,13 +1913,13 @@ export default function App() {
                     value: '1000000000'
                 }
             };
-            console.log("Creating trustline payload via fetch...", payload);
-            const response = await fetch('https://xumm.app/api/v1/platform/payload', {
+            console.log("Creating trustline payload via Netlify Function...", payload);
+            const endpoint = '/.netlify/functions/create-payload';
+
+            const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-API-Key': import.meta.env.VITE_XAMAN_API_KEY,
-                    'Accept': 'application/json'
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(payload)
             });
