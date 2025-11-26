@@ -1277,56 +1277,89 @@ const ProposalArchitect = () => {
         setIsDrafting(false);
     };
 
+    const handleSubmit = async () => {
+        if (!proposal) return;
+
+        try {
+            const response = await fetch("https://formspree.io/f/mwpdepva", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    type: "DAO Proposal",
+                    ...proposal
+                })
+            });
+
+            if (response.ok) {
+                alert("Proposal submitted to DAO Council!");
+                setIdea("");
+                setProposal(null);
+            } else {
+                alert("Failed to submit proposal. Please try again.");
+            }
+        } catch (error) {
+            console.error("Submission error:", error);
+            alert("Error submitting proposal.");
+        }
+    };
+
     return (
         <div className="bg-black/30 backdrop-blur-xl border border-yellow-500/30 rounded-2xl p-6 md:p-8 w-full shadow-2xl shadow-yellow-900/20 relative overflow-hidden flex flex-col h-full transition-transform hover:scale-[1.01]">
             <div className="absolute top-0 right-0 w-64 h-64 bg-yellow-600/10 rounded-full blur-3xl -z-10 pointer-events-none"></div>
 
             <div className="flex items-center gap-2 mb-4">
-                <FileText className="w-5 h-5 text-yellow-400" />
-                <h3 className="text-xl font-bold text-white">✨ DAO Architect</h3>
+                <Vote className="w-5 h-5 text-yellow-400" />
+                <h3 className="text-xl font-bold text-white">✨ Proposal Architect</h3>
             </div>
-            <p className="text-gray-400 mb-6 text-sm flex-grow">
-                Turn your rough ideas into formal governance proposals using Gemini AI.
+            <p className="text-gray-400 mb-6 text-sm">
+                Draft governance proposals using AI. Ensure your voice is heard in the DAO.
             </p>
 
             {!proposal ? (
-                <form onSubmit={handleDraft} className="mt-auto">
-                    <textarea
-                        value={idea}
-                        onChange={(e) => setIdea(e.target.value)}
-                        placeholder="e.g., We should reduce the marketplace fees to 1% to encourage more trading..."
-                        className="w-full bg-black/50 border border-white/20 rounded-xl p-4 text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 transition-all min-h-[100px] mb-4 text-sm"
-                    />
-                    <button
-                        type="submit"
-                        disabled={isDrafting}
-                        className="w-full bg-yellow-600 hover:bg-yellow-500 text-white px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                    >
-                        {isDrafting ? <Loader className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                        {isDrafting ? 'Drafting...' : 'Generate Proposal'}
-                    </button>
-                </form>
+                <div className="mt-auto">
+                    <form onSubmit={handleDraft} className="space-y-3">
+                        <textarea
+                            value={idea}
+                            onChange={(e) => setIdea(e.target.value)}
+                            placeholder="Describe your proposal (e.g. 'Allocate 5000 XMETA for a building contest')..."
+                            className="w-full bg-black/50 border border-yellow-500/30 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-yellow-500 h-24 resize-none"
+                        />
+                        <button
+                            type="submit"
+                            disabled={isDrafting || !idea}
+                            className="w-full py-3 rounded-lg bg-yellow-600 hover:bg-yellow-500 text-white font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isDrafting ? <Loader className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+                            {isDrafting ? 'Drafting...' : 'Generate Proposal'}
+                        </button>
+                    </form>
+                </div>
             ) : (
                 <div className="mt-auto animate-in fade-in slide-in-from-bottom-2 duration-300">
-                    <div className="bg-white/5 border border-white/10 rounded-xl p-5 relative">
+                    <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-xl p-5 relative max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-yellow-900 scrollbar-track-transparent">
                         <button
-                            onClick={() => { setProposal(null); setIdea(""); }}
+                            onClick={() => setProposal(null)}
                             className="absolute top-2 right-2 p-1 hover:bg-white/10 rounded-full transition-colors"
                         >
-                            <X className="w-4 h-4 text-gray-400" />
+                            <X className="w-4 h-4 text-yellow-400" />
                         </button>
-                        <h4 className="font-bold text-yellow-400 mb-2">{proposal.title}</h4>
-                        <p className="text-xs text-gray-300 mb-2 font-bold">Summary</p>
-                        <p className="text-sm text-gray-400 mb-3">{proposal.summary}</p>
-                        <p className="text-xs text-gray-300 mb-2 font-bold">Rationale</p>
-                        <p className="text-sm text-gray-400 mb-4">{proposal.rationale}</p>
-
-                        <div className="flex gap-2">
-                            {proposal.options.map((opt, i) => (
+                        <h4 className="font-bold text-white mb-2">{proposal.title}</h4>
+                        <p className="text-xs text-gray-300 mb-3">{proposal.summary}</p>
+                        <div className="mb-3">
+                            <span className="text-[10px] uppercase font-bold text-yellow-500 tracking-wider">Rationale</span>
+                            <p className="text-xs text-gray-400 italic">"{proposal.rationale}"</p>
+                        </div>
+                        <div className="flex flex-wrap gap-2 mb-4">
+                            {proposal.options?.map((opt, i) => (
                                 <span key={i} className="text-xs bg-white/10 px-2 py-1 rounded text-gray-300 border border-white/5">{opt}</span>
                             ))}
                         </div>
-                        <button className="w-full mt-4 py-2 bg-yellow-600/20 hover:bg-yellow-600/30 text-yellow-400 rounded-lg text-sm font-bold transition-colors border border-yellow-500/30">
+                        <button
+                            onClick={handleSubmit}
+                            className="w-full mt-4 py-2 bg-yellow-600/20 hover:bg-yellow-600/30 text-yellow-400 rounded-lg text-sm font-bold transition-colors border border-yellow-500/30"
+                        >
                             Submit to Chain
                         </button>
                     </div>
@@ -2172,9 +2205,9 @@ export default function App() {
                         <h2 className="text-3xl font-bold mb-2">Marketplace Preview</h2>
                         <p className="text-gray-400">Assets returning in the 2025 drop.</p>
                     </div>
-                    <button className="hidden sm:flex text-pink-500 hover:text-pink-400 items-center gap-1 font-bold">
+                    <a href="https://xpmarket.com" target="_blank" rel="noreferrer" className="hidden sm:flex text-pink-500 hover:text-pink-400 items-center gap-1 font-bold">
                         View All Collections <ChevronRight className="w-4 h-4" />
-                    </button>
+                    </a>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
