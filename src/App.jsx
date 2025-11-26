@@ -35,7 +35,8 @@ import {
     Handshake,
     Newspaper,
     Dna,
-    Pause
+    Pause,
+    ExternalLink
 } from 'lucide-react';
 import { Client } from 'xrpl';
 import { connectWallet, logoutWallet, getXummInstance } from './utils/xaman';
@@ -728,7 +729,7 @@ const GameDashboard = ({ address }) => {
             const xumm = getXummInstance();
             // Convert amount to string for memo
             const amountStr = pendingRewards.toFixed(7);
-            const memoData = `CLAIM:${amountStr}`;
+            const memoData = `CLAIM REWARD: ${amountStr} XMETA`;
             // Simple hex conversion
             const memoHex = Array.from(memoData).map(c => c.charCodeAt(0).toString(16).padStart(2, '0')).join('').toUpperCase();
 
@@ -759,15 +760,16 @@ const GameDashboard = ({ address }) => {
 
             if (!response.ok) {
                 const errorText = await response.text();
-                throw new Error(`Xumm API Error: ${response.status} ${errorText}`);
+                throw new Error(`Function failed: ${response.status} ${errorText}`);
             }
 
             const result = await response.json();
-            console.log("Payload result:", result);
 
-            if (result?.next?.always) {
-                console.log("Opening URL:", result.next.always);
+            if (result && result.next && result.next.always) {
+                // Open signing URL
                 window.open(result.next.always, '_blank');
+            } else if (result && result.pushed) {
+                alert("Sign request pushed to your Xaman wallet!");
             } else {
                 console.warn("No next.always URL in result:", result);
                 alert("Claim created but no URL returned. Check console.");
@@ -981,23 +983,26 @@ const AIGenerator = () => {
                             <div className="flex-1 min-w-0">
                                 <h4 className="text-lg font-bold text-white truncate">{result.name}</h4>
                                 <p className="text-cyan-300 text-xs uppercase font-bold tracking-wider mb-1">{result.rarity} // {result.type}</p>
-                                <p className="text-gray-300 text-sm italic leading-tight mb-2">"{result.description}"</p>
-                                <div className="flex flex-wrap gap-2">
-                                    {result.resources.map(r => (
-                                        <span key={r} className="text-[10px] bg-black/40 border border-white/10 px-2 py-1 rounded text-gray-400">{r}</span>
+                                <p className="text-sm text-gray-300 italic mb-2">"{result.description}"</p>
+                                <div className="flex gap-2">
+                                    {result.resources?.map((res, i) => (
+                                        <span key={i} className="text-[10px] bg-cyan-500/20 text-cyan-300 px-2 py-1 rounded border border-cyan-500/30">{res}</span>
                                     ))}
                                 </div>
+                                <div className="flex gap-2 mt-3">
+                                    <button onClick={handleSpeak} className="flex-1 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1">
+                                        {isPlaying ? <Volume2 className="w-3 h-3 animate-pulse" /> : <Play className="w-3 h-3" />}
+                                        {isPlaying ? 'Playing...' : 'Audio Log'}
+                                    </button>
+                                    <button
+                                        onClick={() => window.open("https://xpmarket.com", "_blank")}
+                                        className="flex-1 py-2 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 text-white shadow-lg shadow-cyan-500/20"
+                                    >
+                                        <ExternalLink className="w-3 h-3" />
+                                        Mint NFT
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-
-                        <div className="flex gap-2 mt-4">
-                            <button onClick={handleSpeak} disabled={isPlaying} className="flex-1 flex items-center justify-center gap-2 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-bold text-cyan-200 transition-colors border border-white/10">
-                                {isPlaying ? <Loader className="w-3 h-3 animate-spin" /> : <Volume2 className="w-3 h-3" />}
-                                Broadcast Lore
-                            </button>
-                            <button className="flex-1 py-2 bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-400 rounded-lg text-xs font-bold transition-colors border border-cyan-500/30">
-                                Mint NFT
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -1012,11 +1017,11 @@ const MissionGenerator = () => {
 
     const generateMission = async () => {
         setLoading(true);
-        const systemPrompt = `You are a mission control officer for the XMeta metaverse. 
-        Generate a JSON object for a daily player mission.
-        JSON Structure:
-        {
-            "title": "Operation Name",
+        const systemPrompt = `You are a mission control officer for the XMeta metaverse.
+            Generate a JSON object for a daily player mission.
+            JSON Structure:
+            {
+                "title": "Operation Name",
             "objective": "Clear instructions on what to do.",
             "difficulty": "Easy | Medium | Hard",
             "reward": "Amount in XMETA",
@@ -1099,7 +1104,7 @@ const AlienDiplomat = () => {
     const scanSpace = async () => {
         setLoading(true);
         const systemPrompt = `You are a sci-fi game master. Generate a random alien encounter.
-        JSON: { "species": "Name", "appearance": "Visual description", "temperament": "Aggressive/Peaceful/Trade-focused", "message": "Initial greeting in broken English" }`;
+            JSON: {"species": "Name", "appearance": "Visual description", "temperament": "Aggressive/Peaceful/Trade-focused", "message": "Initial greeting in broken English" }`;
         const data = await callGemini("Scan for lifeforms.", systemPrompt);
         setAlien(data);
         setPhase('negotiate');
@@ -1109,9 +1114,9 @@ const AlienDiplomat = () => {
     const negotiate = async () => {
         if (!input) return;
         setLoading(true);
-        const systemPrompt = `You are a game master resolving a negotiation with the ${alien.species} (${alien.temperament}). 
-        The player said: "${input}".
-        Decide the outcome. JSON: { "outcome": "Alliance | Trade Deal | War Declared", "response": "Alien's reply", "consequence": "What happens next (e.g. receive tech, ship damaged)" }`;
+        const systemPrompt = `You are a game master resolving a negotiation with the ${alien.species} (${alien.temperament}).
+            The player said: "${input}".
+            Decide the outcome. JSON: {"outcome": "Alliance | Trade Deal | War Declared", "response": "Alien's reply", "consequence": "What happens next (e.g. receive tech, ship damaged)" }`;
         const data = await callGemini("Resolve negotiation.", systemPrompt);
         setResult(data);
         setPhase('result');
@@ -1192,9 +1197,9 @@ const CodeGenesis = () => {
         e.preventDefault();
         if (!input) return;
         setLoading(true);
-        const systemPrompt = `You are an expert XRPL blockchain developer. 
-        Generate a code snippet (XRPL Hook in C, or JS) based on the user's request. 
-        JSON: { "language": "C/JS", "code": "The code snippet", "explanation": "Brief explanation" }`;
+        const systemPrompt = `You are an expert XRPL blockchain developer.
+            Generate a code snippet (XRPL Hook in C, or JS) based on the user's request.
+            JSON: {"language": "C/JS", "code": "The code snippet", "explanation": "Brief explanation" }`;
         const data = await callGemini(input, systemPrompt);
         setCode(data);
         setLoading(false);
@@ -1257,13 +1262,13 @@ const ProposalArchitect = () => {
         if (!idea) return;
         setIsDrafting(true);
 
-        const systemPrompt = `You are a governance expert for the XMeta DAO. 
-    Convert the user's rough idea into a structured DAO proposal.
-    Return JSON: {
-      "title": "Formal Proposal Title",
-      "summary": "2 sentence executive summary",
-      "rationale": "Why this is good for the project",
-      "options": ["Yes", "No", "Abstain"]
+        const systemPrompt = `You are a governance expert for the XMeta DAO.
+            Convert the user's rough idea into a structured DAO proposal.
+            Return JSON: {
+                "title": "Formal Proposal Title",
+            "summary": "2 sentence executive summary",
+            "rationale": "Why this is good for the project",
+            "options": ["Yes", "No", "Abstain"]
     }`;
 
         const data = await callOpenAI(idea, systemPrompt);
@@ -1377,9 +1382,9 @@ const SignalDecoder = () => {
     const handleDecrypt = async () => {
         setDecoding(true);
         const systemPrompt = `You are a communications officer decoding a sci-fi signal from the XGalaxies universe.
-        Return a JSON object:
-        {
-            "sender": "Faction or Entity Name",
+            Return a JSON object:
+            {
+                "sender": "Faction or Entity Name",
             "message": "A short, mysterious lore message (max 20 words)",
             "security_level": "Low | Medium | Critical"
         }`;
@@ -1449,10 +1454,10 @@ const FactionSorter = () => {
         if (!input) return;
         setAnalyzing(true);
 
-        const systemPrompt = `Analyze the user's playstyle description and assign them to a faction: 
-        'Void Stalkers' (Stealth/Intel), 'Solar Punks' (Builders/Nature), or 'Neon Syndicate' (Traders/Cyber).
-        Return JSON: {
-            "faction": "Faction Name",
+        const systemPrompt = `Analyze the user's playstyle description and assign them to a faction:
+            'Void Stalkers' (Stealth/Intel), 'Solar Punks' (Builders/Nature), or 'Neon Syndicate' (Traders/Cyber).
+            Return JSON: {
+                "faction": "Faction Name",
             "reason": "Short reason why",
             "welcome_msg": "A short welcome message from the faction leader."
         }`;
@@ -1519,8 +1524,8 @@ const XDNAProfiler = () => {
         const simulatedWallet = "r" + Math.random().toString(36).substr(2, 30);
 
         const systemPrompt = `You are a geneticist for digital avatars. Analyze the 'wallet signature' provided and generate a unique genetic profile.
-        JSON: { 
-            "class": "Cyborg / Esper / Mutant / Pureblood",
+            JSON: {
+                "class": "Cyborg / Esper / Mutant / Pureblood",
             "origin": "A short origin story (max 15 words)",
             "hidden_talent": "Unique ability name",
             "power_level": "Number between 1-100"
@@ -1590,8 +1595,8 @@ const DailyNode = () => {
     const fetchNews = async () => {
         setLoading(true);
         const systemPrompt = `You are a news editor for "The Daily Node", the main newspaper of the XMeta metaverse.
-        Generate 3 short, punchy headlines about fictional events (market crashes, faction wars, discoveries) in the metaverse.
-        JSON: { "headlines": ["Headline 1", "Headline 2", "Headline 3"] }`;
+            Generate 3 short, punchy headlines about fictional events (market crashes, faction wars, discoveries) in the metaverse.
+            JSON: {"headlines": ["Headline 1", "Headline 2", "Headline 3"] }`;
 
         const data = await callOpenAI("Get latest news.", systemPrompt);
         if (data) {
